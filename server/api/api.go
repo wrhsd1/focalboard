@@ -89,6 +89,10 @@ func (a *API) RegisterRoutes(r *mux.Router) {
 	apiv1.HandleFunc("/users/{userID}/changepassword", a.sessionRequired(a.handleChangePassword)).Methods("POST")
 	apiv1.HandleFunc("/users/{userID}/config", a.sessionRequired(a.handleUpdateUserConfig)).Methods(http.MethodPut)
 
+	// Insights APIs
+	apiv1.HandleFunc("/users/{userID}/boards/insights", a.sessionRequired(a.handleUserBoardsInsights)).Methods("GET")
+	apiv1.HandleFunc("/teams/{teamID}/boards/insights", a.sessionRequired(a.handleTeamBoardsInsights)).Methods("GET")
+
 	apiv1.HandleFunc("/login", a.handleLogin).Methods("POST")
 	apiv1.HandleFunc("/logout", a.sessionRequired(a.handleLogout)).Methods("POST")
 	apiv1.HandleFunc("/register", a.handleRegister).Methods("POST")
@@ -527,6 +531,143 @@ func (a *API) handleUpdateUserConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jsonBytesResponse(w, http.StatusOK, data)
+	auditRec.Success()
+}
+
+func (a *API) handleUserBoardsInsights(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation GET /teams/{userID}/boards/insights getUserBoardsInsights
+	//
+	// Returns user boards insights
+	//
+	// ---
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: userID
+	//   in: path
+	//   description: User ID
+	//   required: true
+	//   type: string
+	// - name: duration
+	//   in: query
+	//   description: duration of data to calculate insights for
+	//   required: true
+	//   type: string
+	// security:
+	// - BearerAuth: []
+	// responses:
+	//   '200':
+	//     description: success
+	//     schema:
+	//       type: array
+	//       items:
+	//         "$ref": "#/definitions/BoardInsight"
+	//   default:
+	//     description: internal error
+	//     schema:
+	//       "$ref": "#/definitions/ErrorResponse"
+
+	vars := mux.Vars(r)
+	userID := vars["userID"]
+
+	query := r.URL.Query()
+	duration := query.Get("duration")
+
+	ctx := r.Context()
+	session := ctx.Value(sessionContextKey).(*model.Session)
+
+	auditRec := a.makeAuditRecord(r, "getUserBoardsInsights", audit.Fail)
+	defer a.audit.LogRecord(audit.LevelModify, auditRec)
+
+	// a user can only get its own boards insights
+	if userID != session.UserID {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	boardsInsights, err := a.app.GetUserBoardsInsights(userID, duration)
+	if err != nil {
+		a.errorResponse(w, r.URL.Path, http.StatusInternalServerError, "duration="+duration, err)
+		return
+	}
+
+	data, err := json.Marshal(boardsInsights)
+	if err != nil {
+		a.errorResponse(w, r.URL.Path, http.StatusInternalServerError, "", err)
+		return
+	}
+
+	jsonBytesResponse(w, http.StatusOK, data)
+
+	auditRec.AddMeta("boardInsightCount", len(boardsInsights))
+	auditRec.Success()
+}
+
+func (a *API) handleTeamBoardsInsights(w http.ResponseWriter, r *http.Request) {
+	// swagger:operation GET /teams/{teamID}/boards/insights getTeamBoardsInsights
+	//
+	// Returns team boards insights
+	//
+	// ---
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: teamID
+	//   in: path
+	//   description: Team ID
+	//   required: true
+	//   type: string
+	// - name: duration
+	//   in: query
+	//   description: duration of data to calculate insights for
+	//   required: true
+	//   type: string
+	// security:
+	// - BearerAuth: []
+	// responses:
+	//   '200':
+	//     description: success
+	//     schema:
+	//       type: array
+	//       items:
+	//         "$ref": "#/definitions/BoardInsight"
+	//   default:
+	//     description: internal error
+	//     schema:
+	//       "$ref": "#/definitions/ErrorResponse"
+	vars := mux.Vars(r)
+	teamID := vars["teamID"]
+	query := r.URL.Query()
+	duration := query.Get("duration")
+
+	// TODO: figure authorization
+	// if !a.permissions.HasPermissionToTeam(userID, teamID, model.PermissionViewTeam) {
+	// 	a.errorResponse(w, r.URL.Path, http.StatusForbidden, "Access denied to team", PermissionError{"access denied to team"})
+	// 	return
+	// }
+
+	auditRec := a.makeAuditRecord(r, "getTeamBoardsInsights", audit.Fail)
+	defer a.audit.LogRecord(audit.LevelRead, auditRec)
+	fmt.Println("api handler")
+
+	boardsInsights, err := a.app.GetTeamBoardsInsights(teamID, duration)
+	if err != nil {
+		fmt.Println("api handler error")
+
+		a.errorResponse(w, r.URL.Path, http.StatusInternalServerError, "duration="+duration, err)
+		return
+	}
+	fmt.Println("c")
+	data, err := json.Marshal(boardsInsights)
+	if err != nil {
+		fmt.Println("b")
+		a.errorResponse(w, r.URL.Path, http.StatusInternalServerError, "", err)
+		return
+	}
+	fmt.Println("d")
+	jsonBytesResponse(w, http.StatusOK, data)
+
+	auditRec.AddMeta("boardInsightCount", len(boardsInsights))
 	auditRec.Success()
 }
 

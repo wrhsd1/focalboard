@@ -310,6 +310,10 @@ func (c *Client) GetUserRoute(id string) string {
 	return fmt.Sprintf("/users/%s", id)
 }
 
+func (c *Client) GetTeamRoute(id string) string {
+	return fmt.Sprintf("/teams/%s", id)
+}
+
 func (c *Client) GetUser(id string) (*model.User, *Response) {
 	r, err := c.DoAPIGet(c.GetUserRoute(id), "")
 	if err != nil {
@@ -418,4 +422,24 @@ func (c *Client) GetSubscriptions(workspaceID string, subscriberID string) ([]*m
 	}
 
 	return subs, BuildResponse(r)
+}
+
+func (c *Client) GetTeamBoardsInsights(teamID string, duration string) ([]model.BoardInsight, *Response) {
+	r, err := c.DoAPIGet(c.GetTeamRoute(teamID)+"/boards/insights?duration="+duration, "")
+	if err != nil {
+		return nil, BuildErrorResponse(r, err)
+	}
+	defer closeBody(r)
+
+	return model.BoardInsightsFromJSON(r.Body), BuildResponse(r)
+}
+
+func (c *Client) GetUserBoardsInsights(userID string, duration string) ([]model.BoardInsight, *Response) {
+	r, err := c.DoAPIGet(c.GetUserRoute(userID)+"/boards/insights?duration="+duration, "")
+	if err != nil {
+		return nil, BuildErrorResponse(r, err)
+	}
+	defer closeBody(r)
+
+	return model.BoardInsightsFromJSON(r.Body), BuildResponse(r)
 }

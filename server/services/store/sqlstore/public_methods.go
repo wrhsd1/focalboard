@@ -221,6 +221,16 @@ func (s *SQLStore) GetSystemSettings() (map[string]string, error) {
 
 }
 
+func (s *SQLStore) GetTeamBoardsInsights(teamID string, duration string) ([]*model.BoardInsight, error) {
+	return s.getTeamBoardsInsights(s.db, teamID, duration)
+
+}
+
+func (s *SQLStore) GetUserBoardsInsights(userID string, duration string) ([]*model.BoardInsight, error) {
+	return s.getUserBoardsInsights(s.db, userID, duration)
+
+}
+
 func (s *SQLStore) GetUserByEmail(email string) (*model.User, error) {
 	return s.getUserByEmail(s.db, email)
 
@@ -378,6 +388,9 @@ func (s *SQLStore) SetSystemSetting(key string, value string) error {
 }
 
 func (s *SQLStore) UndeleteBlock(c store.Container, blockID string, modifiedBy string) error {
+	if s.dbType == sqliteDBType {
+		return s.undeleteBlock(s.db, c, blockID, modifiedBy)
+	}
 	tx, txErr := s.db.BeginTx(context.Background(), nil)
 	if txErr != nil {
 		return txErr

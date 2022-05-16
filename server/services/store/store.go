@@ -100,6 +100,10 @@ type Store interface {
 	DBType() string
 
 	IsErrNotFound(err error) bool
+
+	// Insights
+	GetUserBoardsInsights(userID string, duration string) ([]*model.BoardInsight, error)
+	GetTeamBoardsInsights(teamID string, duration string) ([]*model.BoardInsight, error)
 }
 
 // ErrNotFound is an error type that can be returned by store APIs when a query unexpectedly fetches no records.
