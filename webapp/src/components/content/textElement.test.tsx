@@ -37,6 +37,7 @@ const defaultBlock: TextBlock = {
     createAt: 0,
     updateAt: 0,
     deleteAt: 0,
+    limited: false,
 }
 describe('components/content/TextElement', () => {
     beforeAll(() => {
@@ -61,7 +62,10 @@ describe('components/content/TextElement', () => {
             boards: {
                 [board1.id]: board1,
             }
-        }
+        },
+        clientConfig: {
+            value: {},
+        },
     }
     const store = mockStateStore([], state)
 

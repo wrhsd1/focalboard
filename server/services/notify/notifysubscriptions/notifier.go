@@ -35,7 +35,7 @@ type notifier struct {
 	store       AppAPI
 	permissions permissions.PermissionsService
 	delivery    SubscriptionDelivery
-	logger      *mlog.Logger
+	logger      mlog.LoggerIFace
 
 	hints chan *model.NotificationHint
 
@@ -203,6 +203,9 @@ func (n *notifier) notifySubscribers(hint *model.NotificationHint) error {
 		Language: "en", // TODO: use correct language with i18n available on server.
 		MakeCardLink: func(block *model.Block, board *model.Board, card *model.Block) string {
 			return fmt.Sprintf("[%s](%s)", block.Title, utils.MakeCardLink(n.serverRoot, board.TeamID, board.ID, card.ID))
+		},
+		MakeBoardLink: func(board *model.Board) string {
+			return fmt.Sprintf("[%s](%s)", board.Title, utils.MakeBoardLink(n.serverRoot, board.TeamID, board.ID))
 		},
 		Logger: n.logger,
 	}

@@ -21,9 +21,9 @@ export function typeDisplayName(intl: IntlShape, type: PropertyType): string {
     case 'text': return intl.formatMessage({id: 'PropertyType.Text', defaultMessage: 'Text'})
     case 'number': return intl.formatMessage({id: 'PropertyType.Number', defaultMessage: 'Number'})
     case 'select': return intl.formatMessage({id: 'PropertyType.Select', defaultMessage: 'Select'})
-    case 'multiSelect': return intl.formatMessage({id: 'PropertyType.MultiSelect', defaultMessage: 'Multi Select'})
+    case 'multiSelect': return intl.formatMessage({id: 'PropertyType.MultiSelect', defaultMessage: 'Multi select'})
     case 'person': return intl.formatMessage({id: 'PropertyType.Person', defaultMessage: 'Person'})
-    case 'file': return intl.formatMessage({id: 'PropertyType.File', defaultMessage: 'File or Media'})
+    case 'file': return intl.formatMessage({id: 'PropertyType.File', defaultMessage: 'File or media'})
     case 'checkbox': return intl.formatMessage({id: 'PropertyType.Checkbox', defaultMessage: 'Checkbox'})
     case 'url': return intl.formatMessage({id: 'PropertyType.URL', defaultMessage: 'URL'})
     case 'email': return intl.formatMessage({id: 'PropertyType.Email', defaultMessage: 'Email'})
@@ -91,6 +91,7 @@ export const PropertyTypes = (props: TypesProps): JSX.Element => {
 
 const PropertyMenu = (props: Props) => {
     const intl = useIntl()
+    let currentPropertyName = props.propertyName
 
     const deleteText = intl.formatMessage({
         id: 'PropertyMenu.Delete',
@@ -101,7 +102,11 @@ const PropertyMenu = (props: Props) => {
         <Menu>
             <Menu.TextInput
                 initialValue={props.propertyName}
-                onValueChanged={(n) => props.onTypeAndNameChanged(props.propertyType, n)}
+                onConfirmValue={(n) => {
+                    props.onTypeAndNameChanged(props.propertyType, n)
+                    currentPropertyName = n
+                }}
+                onValueChanged={(n) => currentPropertyName = n}
             />
             <Menu.SubMenu
                 id='type'
@@ -109,7 +114,7 @@ const PropertyMenu = (props: Props) => {
             >
                 <PropertyTypes
                     label={intl.formatMessage({id: 'PropertyMenu.changeType', defaultMessage: 'Change property type'})}
-                    onTypeSelected={(type: PropertyType) => props.onTypeAndNameChanged(type, props.propertyName)}
+                    onTypeSelected={(type: PropertyType) => props.onTypeAndNameChanged(type, currentPropertyName)}
                 />
             </Menu.SubMenu>
             <Menu.Text

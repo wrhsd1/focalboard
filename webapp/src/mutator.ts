@@ -28,6 +28,7 @@ import {updateViews} from './store/views'
 import {updateCards} from './store/cards'
 import {updateComments} from './store/comments'
 import {updateContents} from './store/contents'
+import {addBoardUsers, removeBoardUsersById} from "./store/users"
 
 function updateAllBoardsAndBlocks(boards: Board[], blocks: Block[]) {
     return batch(() => {
@@ -384,9 +385,14 @@ class Mutator {
         await undoManager.perform(
             async () => {
                 await octoClient.deleteBoardMember(member)
+                store.dispatch(removeBoardUsersById([member.userId]))
             },
             async () => {
                 await octoClient.createBoardMember(member)
+                const user = await octoClient.getUser(member.userId)
+                if (user) {
+                    store.dispatch(addBoardUsers([user]))
+                }
             },
             description,
             this.undoGroupId,
@@ -969,6 +975,7 @@ class Mutator {
         fromTemplate = false,
         description = 'duplicate card',
         asTemplate = false,
+        propertyOverrides?: Record<string, string>,
         afterRedo?: (newCardId: string) => Promise<void>,
         beforeUndo?: () => Promise<void>,
     ): Promise<[Block[], string]> {
@@ -998,6 +1005,7 @@ class Mutator {
                 const patch = {
                     updatedFields: {
                         icon: newRootBlock.fields.icon,
+                        properties: {...newRootBlock.fields.properties, ...propertyOverrides}
                     },
                     title: newRootBlock.title,
                 }
@@ -1063,8 +1071,6 @@ class Mutator {
     ): Promise<BoardsAndBlocks> {
         const asTemplate = false
         const actionDescription = intl.formatMessage({id: 'Mutator.new-board-from-template', defaultMessage: 'new board from template'})
-
-        TelemetryClient.trackEvent(TelemetryCategory, TelemetryActions.CreateBoardViaTemplate, {boardTemplateId})
         return mutator.duplicateBoard(boardTemplateId, actionDescription, asTemplate, afterRedo, beforeUndo, toTeam)
     }
 

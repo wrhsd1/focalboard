@@ -12,6 +12,8 @@ import Button from '../../widgets/buttons/button'
 import Menu from '../../widgets/menu'
 import MenuWrapper from '../../widgets/menuWrapper'
 
+import './filterValue.scss'
+
 type Props = {
     view: BoardView
     filter: FilterClause
@@ -35,7 +37,7 @@ const filterValue = (props: Props): JSX.Element|null => {
     }
 
     return (
-        <MenuWrapper>
+        <MenuWrapper className='filterValue'>
             <Button>{displayValue}</Button>
             <Menu>
                 {template.options.map((o) => (
@@ -44,6 +46,7 @@ const filterValue = (props: Props): JSX.Element|null => {
                         id={o.id}
                         name={o.value}
                         isOn={filter.values.includes(o.id)}
+                        suppressItemClicked={true}
                         onClick={(optionId) => {
                             const filterIndex = view.fields.filter.filters.indexOf(filter)
                             Utils.assert(filterIndex >= 0, "Can't find filter")
